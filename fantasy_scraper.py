@@ -9,9 +9,6 @@ class FantasyScraper:
         self.years = years
             
     def init_soup(self, site_url: str) -> "bs4.element.Tag":
-    	if type(site_url) != str:
-    		raise TypeError("Params: 'site_url' must be of type str")
-    		
     	page = requests.get(site_url)
     	soup = BeautifulSoup(page.content, "html.parser")
     	# Crop page to only include divs with relevant data
@@ -21,9 +18,6 @@ class FantasyScraper:
     	
 
     def get_fixture_data(self, fixture_id: str):
-    	if type(fixture_id) != str:
-    		raise TypeError("Params: 'fixture_id' must be of type str")
-    		
     	fixture_url = f"{self.base_url}boxscores/{fixture_id}.htm"
     	cropped_page = self.init_soup(fixture_url)
     	
@@ -37,9 +31,6 @@ class FantasyScraper:
 
     
     def get_fixtures_by_week(self, week: str, year: str) -> list:
-    	if type(week) != str or type(year) != str:
-    		raise TypeError("Params: 'week', 'year' must be of type str") 
-    		
     	week_url = f"{self.base_url}years/{year}/week_{week}.htm"
     	cropped_page = self.init_soup(week_url)
     	

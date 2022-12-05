@@ -10,11 +10,6 @@ class FantasyScraper:
         self.years = years
             
     def init_soup(self, site_url: str) -> "bs4.element.Tag":
-		#headers = {
-		#	"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:83.0) Gecko/20100101 Firefox/83.0",
-		#	"Authorization": "Bearer 2381c6b987aea877abc6a73fe1cbc7d4a88a602c",
-		#}
-
     	page = requests.get(site_url)
     	soup = BeautifulSoup(page.content, "html.parser")
     	# Crop page to only include divs with relevant data
@@ -31,23 +26,6 @@ class FantasyScraper:
     	for table in tables:
     		tabs = table.find_all("div")
     		print(tabs)
-    	
-    	# offense_stats = self.get_passing_rushing_receiving(cropped_page)
-    	# kicking_stats = self.get_kicking(cropped_page)
-    	# Todo:
-    	# - Defense (+ Special Teams)
-    	# - Kicking
-    	# print(cropped_page.get_text())
- 
-    	#tables = self.get_tables(cropped_page)
-    	
-    	# Nothing Found
-    	
-    	# tables = cropped_page.findAll("div")
-    	# for table in tables:
-    		# print(table.get_text())
-    	
-    	return 0 # cropped_page
 
     
     def get_fixtures_by_week(self, week: str, year: str) -> list:
@@ -164,19 +142,6 @@ def main():
 
 	for table in tables:
 		print(table)
-
-    
-    # df = pd.read_html(url)[2]
-    # print(df.to_string())
-    #response = requests.get(url)
-    #soup = BeautifulSoup(response.content, "html.parser")
-    # p_r = requests.get(url).text
-    #tables = soup.find_all("table", text=True)
-    #print(tables)
-   
-   
-    # print(json.dumps(data, indent=4))
-    
 
 
 if __name__ == "__main__":

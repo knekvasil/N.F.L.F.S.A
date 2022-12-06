@@ -9,25 +9,50 @@ class FantasyScraper:
     def __init__(self, years):
         self.years = years
             
-    def init_soup(self, site_url: str) -> "bs4.element.Tag":
-    	page = requests.get(site_url)
-    	soup = BeautifulSoup(page.content, "html.parser")
-    	# Crop page to only include divs with relevant data
+    # Initialize scraper on given site url
+    def init_soup(self, site_path: str) -> "bs4.element.Tag":
+    	response = requests.get(site_path)
+    	soup = BeautifulSoup(response.content, "html.parser")
+    	# Crop page to only include divs with relevant data (ignore header, footer, etc.)
     	cropped_page = soup.find(id="content")
     	
-    	return soup
+    	return cropped_page
     	
 
     def get_fixture_data(self, fixture_id: str) -> dict:
     	fixture_url = f"{self.base_url}boxscores/{fixture_id}.htm"
     	cropped_page = self.init_soup(fixture_url)
     	
-    	tables = cropped_page.find_all("div", class_="table_wrapper")
-    	for table in tables:
-    		tabs = table.find_all("div")
-    		print(tabs)
-
+    	# The only relevant table that can be found without sorting through commented fragments (old version)
+    	self.get_passing_rushing_receiving(cropped_page)
+    	
+    	# Grab all other tables on page (new version)
+    	# Old version for getting tables failed because many tables are commented out
+    	fixture_table_fragments = cropped_page.find_all(string=lambda text: isinstance(text, Comment))
+    	
+    	table_fragments = list()
+  
+    	for table_fragment in fixture_table_fragments:
+    		if "table" in table_fragment:
+    			try:
+    				table_fragments.append(table_fragment)
+    			except:
+    				continue	
+    	
+    	# Filter out non-relevant tables
+    	filter_indices = [5,6,7,8,9,10,11,14,15,16,18]
+    	filtered_tables = [table_fragments[i] for i in filter_indices]
+    	
+    	# Testing
+    	# for t in filtered_tables:
+    	# 	print(pd.read_html(t))
+    	
+    	# Todo: compartmentalize + eval each table like get_passing_rushing_receiving()
+    	
+    	return 0
+		
     
+    # Grab all fixture links from weekly matchup page
     def get_fixtures_by_week(self, week: str, year: str) -> list:
     	week_url = f"{self.base_url}years/{year}/week_{week}.htm"
     	cropped_page = self.init_soup(week_url)
@@ -41,6 +66,7 @@ class FantasyScraper:
     		fixture_ids.append(fixture_id['href'][11:-4])
     		
     	return fixture_ids
+    	
     
     # Get offense player stats (Generic)
     def get_passing_rushing_receiving(self, cropped_page: "bs4.element.Tag") -> dict:   
@@ -66,83 +92,38 @@ class FantasyScraper:
     	return off_player_store
     	
     
-    # Get kicker player stats (Generic)
+    # Get kicker player stats
     def get_kicking(self, cropped_page: "bs4.element.Tag") -> dict:
-    	kicking_player_table = cropped_page.find(id="kicking")
-    	print(kicking_player_table)
-    	kicking_player_table_body = kicking_player_table.find("tbody")
-    	
-    	kicker_store = dict()
-    	
-    	for row in kicking_player_table_body:
-    		player_name_row = row.find("a")
-    		if player_name_row:
-    			player_name = player_name_row.get_text()
-    			kicker_store[player_name] = dict()
-    			for col in row.findAll("td"):
-    				kicker_store[player_name][col["data-stat"]] = col.get_text()
-    	
-    	print(json.dumps(kicker_store, indent=2))
-    			
-    	return kicker_store
+    	return 0
     
     
-    # Get returns player stats (Generic)
+    # Get returns player stats
     def get_returns(self, cropped_page: "bs4.element.Tag") -> dict:
-    	returns_player_table = cropped_page.find(id="returns")
-    	returns_player_table_body = returns_player_table.find("tbody")
-    	
-    	returner_store = dict()
     	return 0
     	
     	
     # A lot of required player data is not given upfront.
     # The simplest solution is to loop through the play-by-play feed and look for cases manually
-    # This could get messy...
+    # This could get ugly...
     def get_play_by_play(self, cropped_page: "bs4.element.Tag") -> dict:
     	return 0;
     	
     
     def parse_table_data(self, table_element: "bs4.element.Tag") -> dict:
-    	
-    	
-    	print(table.get_text())
     	return 0;
     	
     
-
-
 def main():
-    #years = ["2019"]
-    #scraper = FantasyScraper(years)
+    years = ["2019"]
+    scraper = FantasyScraper(years)
     
     # Testing:
     # Get all fixture ids for Week 1, 2019 (Functioning)
     # print(scraper.get_fixtures_by_week("1", "2019"))
     
     # Get game data for GNB v. CHI, Week 1, 2019
-    # scraper.get_fixture_data("201909080min")
+    scraper.get_fixture_data("201909080min")
     
-    
-    
-    
-	response = requests.get("https://www.pro-football-reference.com/boxscores/201909080min.htm")
-
-	soup = BeautifulSoup(response.text, 'html.parser')
-	comments = soup.find_all(string=lambda text: isinstance(text, Comment))
-
-	tables = []
-	for each in comments:
-		if 'table' in each:
-		    try:
-		    	tables.append(each)
-		        #tables.append(pd.read_html(each)[0])
-		    except:
-		        continue
-
-	for table in tables:
-		print(table)
-
 
 if __name__ == "__main__":
     main()

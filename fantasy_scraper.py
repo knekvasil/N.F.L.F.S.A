@@ -49,6 +49,10 @@ class FantasyScraper:
     	
     	# Todo: compartmentalize + eval each table like get_passing_rushing_receiving()
     	
+    	for table_fragment in filtered_tables:
+    		#print("Here", table_fragment)
+    		self.get_table_data(table_fragment)
+    	
     	return 0
 		
     
@@ -68,7 +72,12 @@ class FantasyScraper:
     	return fixture_ids
     	
     
-    # Get offense player stats (Generic)
+    # MERGE THESE 2 BELOW
+    # IN LOOP ABOVE, CHANGE THE LOOP SO IT DOESN'T INCLUDE PBP
+    # IMPLEMENT PBP SEPERATELY
+    # MERGE ALL GATHERED TABLES INTO ONE SUPER DICT
+    
+    # Get offense player stats (unique table)
     def get_passing_rushing_receiving(self, cropped_page: "bs4.element.Tag") -> dict:   
     	# Get p,r,r stats 	
     	off_player_table = cropped_page.find(id="all_player_offense")
@@ -76,7 +85,7 @@ class FantasyScraper:
     	
     	off_player_store = dict()
     	# Loop through player rows
-    	for row in off_player_table_body.findAll("tr"):
+    	for row in off_player_table_body.find_all("tr"):
     		# Filter out non-player rows
     		player_name_row = row.find("a")
     		if player_name_row:
@@ -84,33 +93,44 @@ class FantasyScraper:
     			player_name = player_name_row.get_text()
     			off_player_store[player_name] = dict()
     			# Manually looping though columns simplifies stat retrieval 
-    			for col in row.findAll("td"):
+    			for col in row.find_all("td"):
     				off_player_store[player_name][col["data-stat"]] = col.get_text()
 		# Testing
     	print(json.dumps(off_player_store, indent=2))
   
     	return off_player_store
+    
+    # Get all player stats by grouping (generic table)
+    def get_table_data(self, table_fragment: "bs4.element.Tag") -> dict:
+    	# player_table_body = table_fragment.find("tbody")
+    	# print(player_table_body)
     	
-    
-    # Get kicker player stats
-    def get_kicking(self, cropped_page: "bs4.element.Tag") -> dict:
-    	return 0
-    
-    
-    # Get returns player stats
-    def get_returns(self, cropped_page: "bs4.element.Tag") -> dict:
-    	return 0
+    	# ERROR: HTML STILL IN COMMENT FORM. FIGURE OUT HOW TO SEARCH THROUGH ANYWAY. PARSE INTO HTML AGAIN???
+    	table_soup = BeautifulSoup(table_fragment, "html.parser")
+    	player_table_rows = table_soup.findAll("tr")
+    	# print(player_table_rows)
+    	player_store = dict()
     	
+    	for row in player_table_rows:
+    		player_name_row = row.find("a")
+    		if player_name_row:
+    			player_name = player_name_row.get_text()
+    			player_store[player_name] = dict()
+    			
+    			for col in row.find_all("td"):
+    				player_store[player_name][col["data-stat"]] = col.get_text()
+    		
+    	# Testing
+    	print(json.dumps(player_store, indent=2))
+  
+    	return player_store
+  		
     	
     # A lot of required player data is not given upfront.
     # The simplest solution is to loop through the play-by-play feed and look for cases manually
     # This could get ugly...
     def get_play_by_play(self, cropped_page: "bs4.element.Tag") -> dict:
-    	return 0;
-    	
-    
-    def parse_table_data(self, table_element: "bs4.element.Tag") -> dict:
-    	return 0;
+    	return 0
     	
     
 def main():

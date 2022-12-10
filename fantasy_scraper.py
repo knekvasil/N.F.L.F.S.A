@@ -19,19 +19,24 @@ class FantasyScraper:
     	return cropped_page
     	
 
+	# Grab and filter all relevant matchup data
     def get_fixture_data(self, fixture_id: str) -> dict:
     	fixture_url = f"{self.base_url}boxscores/{fixture_id}.htm"
+    	
     	cropped_page = self.init_soup(fixture_url)
     	
-    	# The only relevant table that can be found without sorting through commented fragments (old version)
-    	self.get_passing_rushing_receiving(cropped_page)
+    	# The page renders tables as either Tags or Comments. In our case, the only Tag
+    	# table we care about is the all_player_offense table
+    	off_player_table = cropped_page.find(id="all_player_offense")
+    	off_player_table_body = off_player_table.find("tbody")
     	
-    	# Grab all other tables on page (new version)
-    	# Old version for getting tables failed because many tables are commented out
+    	
+    	# Grab all Comments on page
     	fixture_table_fragments = cropped_page.find_all(string=lambda text: isinstance(text, Comment))
     	
     	table_fragments = list()
   
+  		# Filter out non-table comments
     	for table_fragment in fixture_table_fragments:
     		if "table" in table_fragment:
     			try:
@@ -41,16 +46,11 @@ class FantasyScraper:
     	
     	# Filter out non-relevant tables
     	filter_indices = [5,6,7,8,9,10,11,14,15,16,18]
-    	filtered_tables = [table_fragments[i] for i in filter_indices]
     	
-    	# Testing
-    	# for t in filtered_tables:
-    	# 	print(pd.read_html(t))
-    	
-    	# Todo: compartmentalize + eval each table like get_passing_rushing_receiving()
+    	# Insert Tag table grabbed earlier to filtered table fragments list
+    	filtered_tables = [off_player_table_body] + [table_fragments[i] for i in filter_indices]
     	
     	for table_fragment in filtered_tables:
-    		#print("Here", table_fragment)
     		self.get_table_data(table_fragment)
     	
     	return 0
@@ -70,44 +70,18 @@ class FantasyScraper:
     		fixture_ids.append(fixture_id['href'][11:-4])
     		
     	return fixture_ids
-    	
     
-    # MERGE THESE 2 BELOW
-    # IN LOOP ABOVE, CHANGE THE LOOP SO IT DOESN'T INCLUDE PBP
-    # IMPLEMENT PBP SEPERATELY
-    # MERGE ALL GATHERED TABLES INTO ONE SUPER DICT
-    
-    # Get offense player stats (unique table)
-    def get_passing_rushing_receiving(self, cropped_page: "bs4.element.Tag") -> dict:   
-    	# Get p,r,r stats 	
-    	off_player_table = cropped_page.find(id="all_player_offense")
-    	off_player_table_body = off_player_table.find("tbody")
-    	
-    	off_player_store = dict()
-    	# Loop through player rows
-    	for row in off_player_table_body.find_all("tr"):
-    		# Filter out non-player rows
-    		player_name_row = row.find("a")
-    		if player_name_row:
-    			# Init player store dict
-    			player_name = player_name_row.get_text()
-    			off_player_store[player_name] = dict()
-    			# Manually looping though columns simplifies stat retrieval 
-    			for col in row.find_all("td"):
-    				off_player_store[player_name][col["data-stat"]] = col.get_text()
-		# Testing
-    	print(json.dumps(off_player_store, indent=2))
-  
-    	return off_player_store
     
     # Get all player stats by grouping (generic table)
-    def get_table_data(self, table_fragment: "bs4.element.Tag") -> dict:
-    	# player_table_body = table_fragment.find("tbody")
-    	# print(player_table_body)
+    def get_table_data(self, table_fragment: "bs4.element") -> dict:    	
+    	if type(table_fragment).__name__ == "Comment":
+    		# Parse Comment back into Tag
+    		table_soup = BeautifulSoup(table_fragment, "html.parser")
+    		player_table_rows = table_soup.findAll("tr")
+    	else:
+    		# table_fragment is a Tag
+    		player_table_rows = table_fragment.find_all("tr")
     	
-    	# ERROR: HTML STILL IN COMMENT FORM. FIGURE OUT HOW TO SEARCH THROUGH ANYWAY. PARSE INTO HTML AGAIN???
-    	table_soup = BeautifulSoup(table_fragment, "html.parser")
-    	player_table_rows = table_soup.findAll("tr")
     	# print(player_table_rows)
     	player_store = dict()
     	

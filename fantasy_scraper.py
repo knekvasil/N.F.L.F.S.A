@@ -2,6 +2,7 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup, Comment
 import json
+from mergedeep import merge
 
 class FantasyScraper:
     base_url = "https://www.pro-football-reference.com/"
@@ -44,15 +45,21 @@ class FantasyScraper:
     			except:
     				continue	
     	
-    	# Filter out non-relevant tables
-    	filter_indices = [5,6,7,8,9,10,11,14,15,16,18]
+    	# Filter out non-relevant tables (including PBP: 18)
+    	filter_indices = [5,6,7,8,9,10,11,14,15,16]
     	
     	# Insert Tag table grabbed earlier to filtered table fragments list
     	filtered_tables = [off_player_table_body] + [table_fragments[i] for i in filter_indices]
     	
-    	for table_fragment in filtered_tables:
-    		self.get_table_data(table_fragment)
+    	player_store = dict()
     	
+    	for table_fragment in filtered_tables:
+    		table_data = self.get_table_data(table_fragment)
+    		# Merging dicts with embedded keys is not trivial. Let a package do it for us instead.
+    		merge(player_store, table_data)
+    		
+    	# Testing
+    	print(json.dumps(player_store, indent=2))
     	return 0
 		
     
@@ -93,9 +100,6 @@ class FantasyScraper:
     			
     			for col in row.find_all("td"):
     				player_store[player_name][col["data-stat"]] = col.get_text()
-    		
-    	# Testing
-    	print(json.dumps(player_store, indent=2))
   
     	return player_store
   		

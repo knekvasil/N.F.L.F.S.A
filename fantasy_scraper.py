@@ -69,12 +69,6 @@ class FantasyScraper:
         # team stats table
         team_stats_store = self.get_team_stats_table_data(table_fragments[4])
 
-        # Parse Play-by-play
-        self.parse_pbp_data(pbp_store, team_stats_store, player_stats_store)
-
-        # Create misc. stats e.g. Bonuses
-        # self.calculate_misc_data()
-
         # Debugging
         # print(json.dumps(player_stats_store, indent=2))
         # print(json.dumps(pbp_store, indent=2))
@@ -164,15 +158,6 @@ class FantasyScraper:
                 play_store.append(play_data)
 
         return play_store
-
-    # A lot of required player data is not given upfront.
-    # The simplest solution is to loop through the play-by-play feed and look for cases manually
-    # This could get ugly...
-    def parse_pbp_data(self, pbp_store: list, team_store: dict, player_store: dict) -> dict:
-        return dict()
-
-    def calculate_misc_data(self) -> None:
-        print("Todo: Create all stats left over from pbp.")
 
 
 def main():

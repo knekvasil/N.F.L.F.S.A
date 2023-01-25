@@ -1,6 +1,6 @@
-# FantasyScraper
+# N.F.L.F.S.A
 
-Grabs NFL fixture data by week.
+The National Football League Fixture Statistics Aggregator.
 
 ### Data Structure
 
@@ -60,7 +60,7 @@ In the script's current state, it produces a JSON file in the format:
 }
 ```
 
-Functionality can easily be expanded to process multiple weeks or years at a time.
+Currently, data is only grabbed per individual week, but functionality can easily be expanded to process multiple weeks or years at a time.
 
 ### Notice
 

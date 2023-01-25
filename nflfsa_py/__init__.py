@@ -6,10 +6,10 @@ import json
 from mergedeep import merge
 
 
-class FantasyScraper:
+class NFLFSA:
     base_url = "https://www.pro-football-reference.com/"
 
-    # Initialize scraper on given site url
+    # Initialize aggregator on given site url
     def init_soup(self, site_path: str) -> bs4.element.Tag:
         response = requests.get(site_path)
         soup = BeautifulSoup(response.content, "html.parser")
@@ -179,7 +179,7 @@ class FantasyScraper:
         return fixture_store
 
     def export_json(self, data: dict) -> None:
-        file_name = "fantasy_scraper_data.json"
+        file_name = "nflfsa_data.json"
 
         print(f"Exporting to {file_name}...")
         # data_json = json.dumps(weekly_data, indent=4)
@@ -191,12 +191,12 @@ class FantasyScraper:
 
 
 def main():
-    scraper = FantasyScraper()
+    aggregator = NFLFSA()
 
     # Example:
     # Get fixture data from Week 1, 2019
-    weekly_data = json.dumps(scraper.get_fixtures_data_by_week("1", "2019"))
-    scraper.export_json(weekly_data)
+    weekly_data = json.dumps(aggregator.get_fixtures_data_by_week("1", "2019"))
+    aggregator.export_json(weekly_data)
 
 
 if __name__ == "__main__":

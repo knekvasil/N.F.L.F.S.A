@@ -1,4 +1,4 @@
-import pandas as pd
+import time
 import requests
 import bs4
 from bs4 import BeautifulSoup, Comment
@@ -8,9 +8,6 @@ from mergedeep import merge
 
 class FantasyScraper:
     base_url = "https://www.pro-football-reference.com/"
-
-    def __init__(self, years):
-        self.years = years
 
     # Initialize scraper on given site url
     def init_soup(self, site_path: str) -> bs4.element.Tag:
@@ -69,12 +66,15 @@ class FantasyScraper:
         # team stats table
         team_stats_store = self.get_team_stats_table_data(table_fragments[4])
 
-        # Debugging
-        # print(json.dumps(player_stats_store, indent=2))
-        # print(json.dumps(pbp_store, indent=2))
-        # print(json.dumps(team_stats_store, indent=2))
+        payload = {
+            fixture_id: {
+                "player_data": player_stats_store,
+                "team_data": team_stats_store,
+                "pbp_data": pbp_store
+            }
+        }
 
-        return 0
+        return payload
 
     # Grab all fixture links from weekly matchup page
     def get_fixtures_by_week(self, week: str, year: str) -> list:
@@ -144,7 +144,8 @@ class FantasyScraper:
     def get_pbp_table_data(self, pbp_table_fragment: bs4.element.Comment) -> list:
         pbp_table_soup = BeautifulSoup(pbp_table_fragment, "html.parser")
         pbp_table_rows = pbp_table_soup.find_all("tr")
-        # Order matters. "Josh Allen (BUF) sacked by Josh Allen (JAX)." kills dict() storing
+        # Order matters. Players with same name forces dict() storing w/ player uid
+        # "Josh Allen (BUF) sacked by Josh Allen (JAX)."
         play_store = list()
 
         for row in pbp_table_rows:
@@ -159,17 +160,43 @@ class FantasyScraper:
 
         return play_store
 
+    def get_fixtures_data_by_week(self, week: str, year: str) -> list:
+        fixture_ids = self.get_fixtures_by_week(week, year)
+        fixture_store = {week: []}
+
+        for fixture_id in fixture_ids:
+            fixture_data = self.get_fixture_data(fixture_id)
+            fixture_store[week].append(fixture_data)
+
+            # PFR allows up to 20 requests a minute.
+            # Tampering with this line risks getting banned from the site for an hour.
+            # For more information, see:
+            # https://www.sports-reference.com/bot-traffic.html
+            # Sleep for 5 seconds
+            time.sleep(5)
+            print(f"Processed {fixture_id}")
+
+        return fixture_store
+
+    def export_json(self, data: dict) -> None:
+        file_name = "fantasy_scraper_data.json"
+
+        print(f"Exporting to {file_name}...")
+        # data_json = json.dumps(weekly_data, indent=4)
+
+        with open(file_name, "w") as outfile:
+            outfile.write(data)
+
+        print(f"Export complete")
+
 
 def main():
-    years = ["2019"]
-    scraper = FantasyScraper(years)
+    scraper = FantasyScraper()
 
-    # Testing:
-    # Get all fixture ids for Week 1, 2019 (Functioning)
-    # print(scraper.get_fixtures_by_week("1", "2019"))
-
-    # Get game data for GNB v. CHI, Week 1, 2019
-    scraper.get_fixture_data("201909080min")
+    # Example:
+    # Get fixture data from Week 1, 2019
+    weekly_data = json.dumps(scraper.get_fixtures_data_by_week("1", "2019"))
+    scraper.export_json(weekly_data)
 
 
 if __name__ == "__main__":

@@ -1,2 +1,5 @@
 # pyenv
 .python-version
+
+# Editor
+.vscode
